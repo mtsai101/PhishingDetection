@@ -32,201 +32,191 @@ def print_help():
     print("")
     exit(-1) 
 
-def variance_threshold_selector(traindata, testdata, threshold=0.01):
+def variance_threshold_selector(traindata, threshold):
     selector = VarianceThreshold(threshold)
     selector.fit(traindata)
-    return traindata[traindata.columns[selector.get_support(indices=True)]],\
-           testdata[testdata.columns[selector.get_support(indices=True)]]
+    return traindata[traindata.columns[selector.get_support(indices=True)]]
 
 if len(sys.argv) < 2:
     print_help()
 if (sys.argv[1] != 'DT' and sys.argv[1] != 'RF' and sys.argv[1] != 'KNN' and sys.argv[1] != 'NB' and sys.argv[1] != 'VS'):
     print_help()
 
-dataset = arff.load(open('Training Dataset.arff'), 'rb')
-print(dataset['attributes'])
+dataset = arff.load(open('../Training Dataset.arff'), 'rb')
+# print(dataset['attributes'])
 att_list = []
 for att in dataset['attributes']:
     att_list.append(att[0])
 Traindata = np.array(dataset['data'])
 Traindata = pd.DataFrame(Traindata, columns=att_list)
-print(Traindata)
+# print(Traindata)
 pd.set_option('display.float_format', lambda x: '%.2f' % x)
 
 
-# target = Traindata.values[:, len(Traindata.columns) - 1]
+target = Traindata.values[:, len(Traindata.columns) - 1]
 # target = target.astype('int')
-# Traindata.drop(len(Traindata.columns) - 1, axis=1, inplace=True)
+Traindata.drop('Result', axis=1, inplace=True)
+print(Traindata)
 
-# # ---------------- visualize ----------------
-# if sys.argv[1] == 'VS':
-#     Traindata_visual = Traindata.copy()
-#     Traindata_visual.columns = featureList
-#     # features = ['count', 'srv_count', 'dst_host_count', 'dst_host_srv_count']
-#     # features = ['count', 'srv_count']
-#     # print(Traindata_visual[features].describe())
-#     plt.subplot(2, 1, 1)
-#     pd.value_counts(Traindata_visual['protocol_type']).plot.bar()
-#     plt.title('protocol_type')
-#     plt.subplot(2, 1, 2)
-#     pd.value_counts(Traindata_visual['service']).plot.bar()
-#     plt.title('service')
-#     # Traindata_visual[features].hist(figsize=(20, 8), grid=False)
-#     plt.show()
-#     exit(-1)
-# # ---------------- visualize ----------------
+# ---------------- visualize ----------------
+if sys.argv[1] == 'VS':
+    Traindata_visual = Traindata.copy()
+    plt.subplot(2, 1, 1)
+    pd.value_counts(Traindata_visual['having_IP_Address']).plot.bar()
+    plt.title('having_IP_Address')
+    plt.subplot(2, 1, 2)
+    pd.value_counts(Traindata_visual['URL_Length']).plot.bar()
+    plt.title('URL_Length')
+    plt.show()
+    exit(-1)
+# ---------------- visualize ----------------
 
-# # ------------ label encoding example ------------
-# # labelencoder = LabelEncoder()
-# # Traindata[1] = labelencoder.fit_transform(Traindata[1])
-# # Traindata[2] = labelencoder.fit_transform(Traindata[2])
-# # Traindata[3] = labelencoder.fit_transform(Traindata[3])
-# # ------------ label encoding example ------------
+Traindata = variance_threshold_selector(Traindata, 0.1)
+# print(Traindata)
 
-# temp = pd.get_dummies(pd.concat([Traindata,Testdata],keys=[0,1]))
-# Traindata, Testdata = temp.xs(0), temp.xs(1)
-# # print(Traindata)
-# # print(target)
-# # print(Testdata)
-# # print(target_test)
+scaler = StandardScaler()
+scaler.fit(Traindata)
+Traindata = pd.DataFrame(scaler.transform(Traindata), index=Traindata.index, columns=Traindata.columns)
+print(Traindata)
 
-# # Traindata = pd.get_dummies(Traindata)
+feature = Traindata.values
 
-# Traindata, Testdata = variance_threshold_selector(Traindata, Testdata, 0.01)
-# # print(Traindata)
-# # print(Testdata)
+# x meas feature, y means target
+x_train, x_test, y_train, y_test = train_test_split(feature, target, test_size = 0.2, random_state = 42)
+print(x_train)
+print(x_test)
+print(y_train)
+print(y_test)
+clf = DecisionTreeClassifier(criterion = "entropy", random_state = 42)
+clf.fit(x_train, y_train)
+target_pred = clf.predict(x_test)
+print("By micro average")
+print("Recall: ", recall_score(y_test, target_pred, average='micro'))
+print("Precision: ", precision_score(y_test, target_pred, average='micro'))
+print("F1-Score: ", f1_score(y_test, target_pred, average='micro'))
+print("")
+print("By macro average")
+print("Recall: ", recall_score(y_test, target_pred, average='macro'))
+print("Precision: ", precision_score(y_test, target_pred, average='macro'))
+print("F1-Score: ", f1_score(y_test, target_pred, average='macro'))
+print("")
+print("Confusion matrix:\n", confusion_matrix(y_test, target_pred))
 
-# scaler = StandardScaler()
-# scaler.fit(Traindata)
-# Traindata = pd.DataFrame(scaler.transform(Traindata), index=Traindata.index, columns=Traindata.columns)
-# Testdata = pd.DataFrame(scaler.transform(Testdata), index=Testdata.index, columns=Testdata.columns)
-# # print(Traindata)
-# # print(Testdata)
-
-# feature = Traindata.values
-# feature_test = Testdata.values
-
-# kf = KFold(n_splits=5, shuffle=True)
-
-# if sys.argv[1] == 'DT':
-#     # clf = DecisionTreeClassifier(criterion = "entropy", random_state = 42)
-#     clf = DecisionTreeClassifier()
-#     params = {'criterion': ['gini', 'entropy'],
-#               'max_features': ['auto', 'sqrt'],
-#               'max_depth': [10, 20, 30, 40, 50, None],
-#               'min_samples_split': [2, 5, 7, 9],
-#               'min_samples_leaf': [1, 3, 5],
-#               'random_state': [42, 100]}
-#     clf_random = RandomizedSearchCV(estimator = clf, param_distributions = params, 
-#                                     n_iter = 100, cv = kf, verbose=2, random_state=42, n_jobs = -1)
-#     clf_random.fit(feature, target)
-#     best_random = clf_random.best_estimator_
-#     target_pred = best_random.predict(feature_test)
-#     # target_pred = clf.predict(feature_test)
-#     print("--------- By Decision Tree ---------")
-#     print("By micro average")
-#     print("Recall: ", recall_score(target_test, target_pred, average='micro'))
-#     print("Precision: ", precision_score(target_test, target_pred, average='micro'))
-#     print("F1-Score: ", f1_score(target_test, target_pred, average='micro'))
-#     print("")
-#     print("By macro average")
-#     print("Recall: ", recall_score(target_test, target_pred, average='macro'))
-#     print("Precision: ", precision_score(target_test, target_pred, average='macro'))
-#     print("F1-Score: ", f1_score(target_test, target_pred, average='macro'))
-#     print("")
-#     print("Confusion matrix:\n", confusion_matrix(target_test, target_pred))
-#     print("------------------------------------\n")
-#     # disp = plot_confusion_matrix(clf, feature_test, target_test, 
-#     #                              cmap=plt.cm.Blues, display_labels=label_names, normalize='true', values_format=".4f")
-#     # disp.ax_.set_title('Confusion matrix (Decision Tree)')
-#     # plt.show()
+kf = KFold(n_splits=5, shuffle=True)
+"""
+if sys.argv[1] == 'DT':
+    # clf = DecisionTreeClassifier(criterion = "entropy", random_state = 42)
+    clf = DecisionTreeClassifier()
+    params = {'criterion': ['gini', 'entropy'],
+              'max_features': ['auto', 'sqrt'],
+              'max_depth': [10, 20, 30, 40, 50, None],
+              'min_samples_split': [2, 5, 7, 9],
+              'min_samples_leaf': [1, 3, 5],
+              'random_state': [42, 100]}
+    clf_random = RandomizedSearchCV(estimator = clf, param_distributions = params, 
+                                    n_iter = 100, cv = kf, verbose=2, random_state=42, n_jobs = -1)
+    clf_random.fit(feature, target)
+    best_random = clf_random.best_estimator_
+    target_pred = best_random.predict(feature_test)
+    # target_pred = clf.predict(feature_test)
+    print("--------- By Decision Tree ---------")
+    print("By micro average")
+    print("Recall: ", recall_score(target_test, target_pred, average='micro'))
+    print("Precision: ", precision_score(target_test, target_pred, average='micro'))
+    print("F1-Score: ", f1_score(target_test, target_pred, average='micro'))
+    print("")
+    print("By macro average")
+    print("Recall: ", recall_score(target_test, target_pred, average='macro'))
+    print("Precision: ", precision_score(target_test, target_pred, average='macro'))
+    print("F1-Score: ", f1_score(target_test, target_pred, average='macro'))
+    print("")
+    print("Confusion matrix:\n", confusion_matrix(target_test, target_pred))
+    print("------------------------------------\n")
+    # disp = plot_confusion_matrix(clf, feature_test, target_test, 
+    #                              cmap=plt.cm.Blues, display_labels=label_names, normalize='true', values_format=".4f")
+    # disp.ax_.set_title('Confusion matrix (Decision Tree)')
+    # plt.show()
     
-# if sys.argv[1] == 'RF':
-#     # clf = RandomForestClassifier(criterion = "entropy", random_state = 100, n_estimators = 300)
-#     clf = RandomForestClassifier()
-#     params = {'criterion': ['gini', 'entropy'],
-#               'n_estimators': [100, 200, 300, 400, 500],
-#               'max_features': ['auto', 'sqrt'],
-#               'max_depth': [10, 20, 30, 40, 50, None],
-#               'min_samples_split': [2, 5, 7, 9],
-#               'min_samples_leaf': [1, 3, 5]}
-#     clf_random = RandomizedSearchCV(estimator = clf, param_distributions = params, 
-#                                     n_iter = 100, cv = kf, verbose=2, random_state=42, n_jobs = -1)
-#     clf_random.fit(feature, target)
-#     best_random = clf_random.best_estimator_
-#     target_pred = best_random.predict(feature_test)
-#     # target_pred = clf.predict(feature_test)
-#     print("--------- By Random Forest ---------")
-#     print("By micro average")
-#     print("Recall: ", recall_score(target_test, target_pred, average='micro'))
-#     print("Precision: ", precision_score(target_test, target_pred, average='micro'))
-#     print("F1-Score: ", f1_score(target_test, target_pred, average='micro'))
-#     print("")
-#     print("By macro average")
-#     print("Recall: ", recall_score(target_test, target_pred, average='macro'))
-#     print("Precision: ", precision_score(target_test, target_pred, average='macro'))
-#     print("F1-Score: ", f1_score(target_test, target_pred, average='macro'))
-#     print("")
-#     print("Confusion matrix:\n", confusion_matrix(target_test, target_pred))
-#     print("------------------------------------\n")
-#     # disp = plot_confusion_matrix(clf, feature_test, target_test, 
-#     #                              cmap=plt.cm.Blues, display_labels=label_names, normalize='true', values_format=".4f")
-#     # disp.ax_.set_title('Confusion matrix (Random Forest)')
-#     # plt.show()
+if sys.argv[1] == 'RF':
+    # clf = RandomForestClassifier(criterion = "entropy", random_state = 100, n_estimators = 300)
+    clf = RandomForestClassifier()
+    params = {'criterion': ['gini', 'entropy'],
+              'n_estimators': [100, 200, 300, 400, 500],
+              'max_features': ['auto', 'sqrt'],
+              'max_depth': [10, 20, 30, 40, 50, None],
+              'min_samples_split': [2, 5, 7, 9],
+              'min_samples_leaf': [1, 3, 5]}
+    clf_random = RandomizedSearchCV(estimator = clf, param_distributions = params, 
+                                    n_iter = 100, cv = kf, verbose=2, random_state=42, n_jobs = -1)
+    clf_random.fit(feature, target)
+    best_random = clf_random.best_estimator_
+    target_pred = best_random.predict(feature_test)
+    # target_pred = clf.predict(feature_test)
+    print("--------- By Random Forest ---------")
+    print("By micro average")
+    print("Recall: ", recall_score(target_test, target_pred, average='micro'))
+    print("Precision: ", precision_score(target_test, target_pred, average='micro'))
+    print("F1-Score: ", f1_score(target_test, target_pred, average='micro'))
+    print("")
+    print("By macro average")
+    print("Recall: ", recall_score(target_test, target_pred, average='macro'))
+    print("Precision: ", precision_score(target_test, target_pred, average='macro'))
+    print("F1-Score: ", f1_score(target_test, target_pred, average='macro'))
+    print("")
+    print("Confusion matrix:\n", confusion_matrix(target_test, target_pred))
+    print("------------------------------------\n")
+    # disp = plot_confusion_matrix(clf, feature_test, target_test, 
+    #                              cmap=plt.cm.Blues, display_labels=label_names, normalize='true', values_format=".4f")
+    # disp.ax_.set_title('Confusion matrix (Random Forest)')
+    # plt.show()
 
-# if sys.argv[1] == 'NB':
-#     clf = GaussianNB()
-#     params = {'priors': [0.15, 0.25, 0.35, 0.5, None],
-#               'var_smoothing': [ i*(1e-09) for i in range(10, 100)]}
-#     clf_random = RandomizedSearchCV(estimator = clf, param_distributions = params, 
-#                                     n_iter = 100, cv = kf, verbose=2, random_state=42, n_jobs = -1)
-#     clf_random.fit(feature, target)
-#     best_random = clf_random.best_estimator_
-#     target_pred = best_random.predict(feature_test)
-#     # target_pred = clf.predict(feature_test)
-#     print("---------- By Naive Bayes ----------")
-#     print("By micro average")
-#     print("Recall: ", recall_score(target_test, target_pred, average='micro'))
-#     print("Precision: ", precision_score(target_test, target_pred, average='micro'))
-#     print("F1-Score: ", f1_score(target_test, target_pred, average='micro'))
-#     print("")
-#     print("By macro average")
-#     print("Recall: ", recall_score(target_test, target_pred, average='macro'))
-#     print("Precision: ", precision_score(target_test, target_pred, average='macro'))
-#     print("F1-Score: ", f1_score(target_test, target_pred, average='macro'))
-#     print("")
-#     print("Confusion matrix:\n", confusion_matrix(target_test, target_pred))
-#     print("------------------------------------\n")
-#     # disp = plot_confusion_matrix(clf, feature_test, target_test, 
-#     #                              cmap=plt.cm.Blues, display_labels=label_names, normalize='true', values_format=".4f")
-#     # disp.ax_.set_title('Confusion matrix (NB)')
-#     # plt.show()
+if sys.argv[1] == 'NB':
+    clf = GaussianNB()
+    params = {'priors': [0.15, 0.25, 0.35, 0.5, None],
+              'var_smoothing': [ i*(1e-09) for i in range(10, 100)]}
+    clf_random = RandomizedSearchCV(estimator = clf, param_distributions = params, 
+                                    n_iter = 100, cv = kf, verbose=2, random_state=42, n_jobs = -1)
+    clf_random.fit(feature, target)
+    best_random = clf_random.best_estimator_
+    target_pred = best_random.predict(feature_test)
+    # target_pred = clf.predict(feature_test)
+    print("---------- By Naive Bayes ----------")
+    print("By micro average")
+    print("Recall: ", recall_score(target_test, target_pred, average='micro'))
+    print("Precision: ", precision_score(target_test, target_pred, average='micro'))
+    print("F1-Score: ", f1_score(target_test, target_pred, average='micro'))
+    print("")
+    print("By macro average")
+    print("Recall: ", recall_score(target_test, target_pred, average='macro'))
+    print("Precision: ", precision_score(target_test, target_pred, average='macro'))
+    print("F1-Score: ", f1_score(target_test, target_pred, average='macro'))
+    print("")
+    print("Confusion matrix:\n", confusion_matrix(target_test, target_pred))
+    print("------------------------------------\n")
+    # disp = plot_confusion_matrix(clf, feature_test, target_test, 
+    #                              cmap=plt.cm.Blues, display_labels=label_names, normalize='true', values_format=".4f")
+    # disp.ax_.set_title('Confusion matrix (NB)')
+    # plt.show()
 
-# if sys.argv[1] == 'KNN':
-#     knn = KNeighborsClassifier(n_neighbors=5)
-#     knn.fit(feature, target)
-#     target_pred = knn.predict(feature_test)
-#     print("-------------- By KNN --------------")
-#     print("By micro average")
-#     print("Recall: ", recall_score(target_test, target_pred, average='micro'))
-#     print("Precision: ", precision_score(target_test, target_pred, average='micro'))
-#     print("F1-Score: ", f1_score(target_test, target_pred, average='micro'))
-#     print("")
-#     print("By macro average")
-#     print("Recall: ", recall_score(target_test, target_pred, average='macro'))
-#     print("Precision: ", precision_score(target_test, target_pred, average='macro'))
-#     print("F1-Score: ", f1_score(target_test, target_pred, average='macro'))
-#     print("")
-#     print("Confusion matrix:\n", confusion_matrix(target_test, target_pred))
-#     print("------------------------------------\n")
-#     # disp = plot_confusion_matrix(knn, feature_test, target_test, 
-#     #                              cmap=plt.cm.Blues, display_labels=label_names, normalize='true', values_format=".4f")
-#     # disp.ax_.set_title('Confusion matrix (KNN)')
-#     # plt.show()
-
-# # # x meas feature, y means target
-# # kf = KFold(n_splits = 3)
-# # # x_train, x_test, y_train, y_test = train_test_split(feature, target, test_size = 0.1, random_state = 42)
-# # # clf_entropy.fit(x_train, y_train)
-
-# # # y_pred = clf_entropy.predict(x_test)
+if sys.argv[1] == 'KNN':
+    knn = KNeighborsClassifier(n_neighbors=5)
+    knn.fit(feature, target)
+    target_pred = knn.predict(feature_test)
+    print("-------------- By KNN --------------")
+    print("By micro average")
+    print("Recall: ", recall_score(target_test, target_pred, average='micro'))
+    print("Precision: ", precision_score(target_test, target_pred, average='micro'))
+    print("F1-Score: ", f1_score(target_test, target_pred, average='micro'))
+    print("")
+    print("By macro average")
+    print("Recall: ", recall_score(target_test, target_pred, average='macro'))
+    print("Precision: ", precision_score(target_test, target_pred, average='macro'))
+    print("F1-Score: ", f1_score(target_test, target_pred, average='macro'))
+    print("")
+    print("Confusion matrix:\n", confusion_matrix(target_test, target_pred))
+    print("------------------------------------\n")
+    # disp = plot_confusion_matrix(knn, feature_test, target_test, 
+    #                              cmap=plt.cm.Blues, display_labels=label_names, normalize='true', values_format=".4f")
+    # disp.ax_.set_title('Confusion matrix (KNN)')
+    # plt.show()
+"""
