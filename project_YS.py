@@ -39,7 +39,7 @@ def variance_threshold_selector(traindata, threshold):
 
 if len(sys.argv) < 2:
     print_help()
-if (sys.argv[1] != 'DT' and sys.argv[1] != 'RF' and sys.argv[1] != 'KNN' and sys.argv[1] != 'NB' and sys.argv[1] != 'VS'):
+if (sys.argv[1] != 'DT' and sys.argv[1] != 'RF' and sys.argv[1] != 'NB' and sys.argv[1] != 'VS'):
     print_help()
 
 dataset = arff.load(open('../Training Dataset.arff'), 'rb')
@@ -72,38 +72,38 @@ if sys.argv[1] == 'VS':
 # ---------------- visualize ----------------
 
 Traindata = variance_threshold_selector(Traindata, 0.1)
-# print(Traindata)
+print(Traindata)
 
 scaler = StandardScaler()
 scaler.fit(Traindata)
 Traindata = pd.DataFrame(scaler.transform(Traindata), index=Traindata.index, columns=Traindata.columns)
-print(Traindata)
+# print(Traindata)
 
 feature = Traindata.values
 
-# x meas feature, y means target
-x_train, x_test, y_train, y_test = train_test_split(feature, target, test_size = 0.2, random_state = 42)
-print(x_train)
-print(x_test)
-print(y_train)
-print(y_test)
-clf = DecisionTreeClassifier(criterion = "entropy", random_state = 42)
-clf.fit(x_train, y_train)
-target_pred = clf.predict(x_test)
-print("By micro average")
-print("Recall: ", recall_score(y_test, target_pred, average='micro'))
-print("Precision: ", precision_score(y_test, target_pred, average='micro'))
-print("F1-Score: ", f1_score(y_test, target_pred, average='micro'))
-print("")
-print("By macro average")
-print("Recall: ", recall_score(y_test, target_pred, average='macro'))
-print("Precision: ", precision_score(y_test, target_pred, average='macro'))
-print("F1-Score: ", f1_score(y_test, target_pred, average='macro'))
-print("")
-print("Confusion matrix:\n", confusion_matrix(y_test, target_pred))
+feature, feature_test, target, target_test = train_test_split(feature, target, test_size = 0.2, random_state = 42)
+# print(feature)
+# print(feature_test)
+# print(target)
+# print(target_test)
+# clf = RandomForestClassifier(criterion = "entropy", random_state = 100, n_estimators = 300)
+# clf = DecisionTreeClassifier(criterion = "entropy", random_state = 42)
+# clf.fit(feature, target)
+# target_pred = clf.predict(feature_test)
+# print("By micro average")
+# print("Recall: ", recall_score(target_test, target_pred, average='micro'))
+# print("Precision: ", precision_score(target_test, target_pred, average='micro'))
+# print("F1-Score: ", f1_score(target_test, target_pred, average='micro'))
+# print("")
+# print("By macro average")
+# print("Recall: ", recall_score(target_test, target_pred, average='macro'))
+# print("Precision: ", precision_score(target_test, target_pred, average='macro'))
+# print("F1-Score: ", f1_score(target_test, target_pred, average='macro'))
+# print("")
+# print("Confusion matrix:\n", confusion_matrix(target_test, target_pred))
 
-kf = KFold(n_splits=5, shuffle=True)
-"""
+kf = KFold(n_splits=10, shuffle=True)
+
 if sys.argv[1] == 'DT':
     # clf = DecisionTreeClassifier(criterion = "entropy", random_state = 42)
     clf = DecisionTreeClassifier()
@@ -197,26 +197,3 @@ if sys.argv[1] == 'NB':
     #                              cmap=plt.cm.Blues, display_labels=label_names, normalize='true', values_format=".4f")
     # disp.ax_.set_title('Confusion matrix (NB)')
     # plt.show()
-
-if sys.argv[1] == 'KNN':
-    knn = KNeighborsClassifier(n_neighbors=5)
-    knn.fit(feature, target)
-    target_pred = knn.predict(feature_test)
-    print("-------------- By KNN --------------")
-    print("By micro average")
-    print("Recall: ", recall_score(target_test, target_pred, average='micro'))
-    print("Precision: ", precision_score(target_test, target_pred, average='micro'))
-    print("F1-Score: ", f1_score(target_test, target_pred, average='micro'))
-    print("")
-    print("By macro average")
-    print("Recall: ", recall_score(target_test, target_pred, average='macro'))
-    print("Precision: ", precision_score(target_test, target_pred, average='macro'))
-    print("F1-Score: ", f1_score(target_test, target_pred, average='macro'))
-    print("")
-    print("Confusion matrix:\n", confusion_matrix(target_test, target_pred))
-    print("------------------------------------\n")
-    # disp = plot_confusion_matrix(knn, feature_test, target_test, 
-    #                              cmap=plt.cm.Blues, display_labels=label_names, normalize='true', values_format=".4f")
-    # disp.ax_.set_title('Confusion matrix (KNN)')
-    # plt.show()
-"""
