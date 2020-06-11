@@ -23,12 +23,13 @@ from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import RandomizedSearchCV
 
 def print_help():
-    print("Usage: python3 project.py [DT, RF, NB, VS]")
+    print("Usage: python3 project.py [DT, RF, NB, VS] [file]")
     print("")
     print("DT: Decision Tree")
     print("RF: Random Forest")
     print("NB: Naive Bayes")
     print("VS: only show data visualization")
+    print("file: please input file path")
     print("")
     exit(-1) 
 
@@ -42,7 +43,9 @@ if len(sys.argv) < 2:
 if (sys.argv[1] != 'DT' and sys.argv[1] != 'RF' and sys.argv[1] != 'NB' and sys.argv[1] != 'VS'):
     print_help()
 
-dataset = arff.load(open('../Training Dataset.arff'), 'rb')
+file_name = sys.argv[2]
+
+dataset = arff.load(open(file_name), 'rb')
 # print(dataset['attributes'])
 att_list = []
 for att in dataset['attributes']:
@@ -55,7 +58,7 @@ pd.set_option('display.float_format', lambda x: '%.2f' % x)
 
 target = Traindata.values[:, len(Traindata.columns) - 1]
 # target = target.astype('int')
-Traindata.drop('Result', axis=1, inplace=True)
+Traindata.drop(att_list[-1], axis=1, inplace=True)
 print(Traindata)
 
 # ---------------- visualize ----------------
@@ -103,6 +106,7 @@ feature, feature_test, target, target_test = train_test_split(feature, target, t
 # print("Confusion matrix:\n", confusion_matrix(target_test, target_pred))
 
 kf = KFold(n_splits=10, shuffle=True)
+
 
 if sys.argv[1] == 'DT':
     # clf = DecisionTreeClassifier(criterion = "entropy", random_state = 42)
