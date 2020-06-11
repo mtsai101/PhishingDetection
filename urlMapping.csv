@@ -1,0 +1,6 @@
+DatasetName	website
+UCI_dataset.arff	https://archive.ics.uci.edu/ml/datasets/Phishing+Websites
+Mendeley_dataset.arff	https://data.mendeley.com/datasets/h3cgnj8hft/1
+UNB_ISCXURL_2016	https://www.unb.ca/cic/datasets/url-2016.html
+PhishStorm.csv	https://research.aalto.fi/en/datasets/phishstorm--phishing--legitimate-url-dataset(f49465b2-c68a-4182-9171-075f0ed797d5).html
+Phishload	http://www.medien.ifi.lmu.de/team/max.maurer/files/phishload/index.html
