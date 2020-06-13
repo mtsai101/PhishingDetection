@@ -2,7 +2,7 @@ import sys
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import arff
+from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.feature_selection import VarianceThreshold
 from sklearn.preprocessing import StandardScaler
@@ -24,6 +24,8 @@ from sklearn.model_selection import RandomizedSearchCV
 from sklearn.model_selection import GridSearchCV
 from sklearn.decomposition import PCA
 from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.metrics import classification_report
 
 def print_help():
     print("Usage: python3 project.py [DT, RF, SVM, NB, VS, ALL] [file]")
@@ -47,35 +49,27 @@ if len(sys.argv) < 2:
 if (sys.argv[1] != 'DT' and sys.argv[1] != 'RF' and sys.argv[1] != 'SVM' and sys.argv[1] != 'NB' and sys.argv[1] != 'VS' and sys.argv[1] != 'ALL'):
     print_help()
 
-file_name = sys.argv[2]
-
-dataset = arff.load(open(file_name), 'rb')
-# print(dataset['attributes'])
-att_list = []
-for att in dataset['attributes']:
-    att_list.append(att[0])
-Traindata = np.array(dataset['data'])
-Traindata = pd.DataFrame(Traindata, columns=att_list)
-# print(Traindata)
 pd.set_option('display.float_format', lambda x: '%.2f' % x)
+dataset = pd.read_csv('../dataset/UNB_Phishing.csv')
+dataset = dataset.fillna(-1)
+imp = SimpleImputer(missing_values=np.inf, strategy='constant',fill_value=1)
+imp.fit_transform(dataset)
 
-
+le = LabelEncoder()
+dataset['URL_Type_obf_Type'] = le.fit_transform(dataset['URL_Type_obf_Type'])
+Traindata = dataset.astype('float64')
 target = Traindata.values[:, len(Traindata.columns) - 1]
-# target = target.astype('int')
-Traindata.drop(att_list[-1], axis=1, inplace=True)
-# print(Traindata)
+Traindata.drop('URL_Type_obf_Type', axis=1, inplace=True)
+class_list = list(le.classes_)
+row_format ="{:>15}" * (len(class_list) + 1)
+
+for k,i in enumerate(Traindata['argPathRatio']):
+    if np.isinf(Traindata['argPathRatio'][k]): 
+        Traindata['argPathRatio'][k] = 2.0
 
 # ---------------- visualize ----------------
-if sys.argv[1] == 'VS':
-    Traindata_visual = Traindata.copy()
-    plt.subplot(2, 1, 1)
-    pd.value_counts(Traindata_visual['having_IP_Address']).plot.bar()
-    plt.title('having_IP_Address')
-    plt.subplot(2, 1, 2)
-    pd.value_counts(Traindata_visual['URL_Length']).plot.bar()
-    plt.title('URL_Length')
-    plt.show()
-    exit(-1)
+# class_num = Traindata['URL_Type_obf_Type'].value_counts()
+# class_num.plot(kind='bar', title='Count (class)')
 # ---------------- visualize ----------------
 
 # Traindata = variance_threshold_selector(Traindata, 0.1)
@@ -103,20 +97,27 @@ if sys.argv[1] == 'DT' or sys.argv[1] == 'ALL':
     best.fit(feature, target)
 
     target_pred = best.predict(feature_test)
-
+    
     print("--------- By Decision Tree ---------")
-    print("By micro average")
-    print("Recall: ", recall_score(target_test, target_pred, average='micro'))
-    print("Precision: ", precision_score(target_test, target_pred, average='micro'))
-    print("F1-Score: ", f1_score(target_test, target_pred, average='micro'))
-    print("")
-    print("By macro average")
-    print("Recall: ", recall_score(target_test, target_pred, average='macro'))
-    print("Precision: ", precision_score(target_test, target_pred, average='macro'))
-    print("F1-Score: ", f1_score(target_test, target_pred, average='macro'))
-    print("")
-    print("Confusion matrix:\n", confusion_matrix(target_test, target_pred))
+    print("Confusion matrix:")
+    print(row_format.format("", *class_list))
+    for team, row in zip(class_list, confusion_matrix(target_test,target_pred)):
+        print(row_format.format(team, *row))
+    print(classification_report(target_test, target_pred,target_names=class_list))
+    print("Misclassified sample: %d" % (target_test != target_pred).sum())
+    # print("By micro average")
+    # print("Recall: ", recall_score(target_test, target_pred, average='micro'))
+    # print("Precision: ", precision_score(target_test, target_pred, average='micro'))
+    # print("F1-Score: ", f1_score(target_test, target_pred, average='micro'))
+    # print("")
+    # print("By macro average")
+    # print("Recall: ", recall_score(target_test, target_pred, average='macro'))
+    # print("Precision: ", precision_score(target_test, target_pred, average='macro'))
+    # print("F1-Score: ", f1_score(target_test, target_pred, average='macro'))
+    # print("")
+    # print("Confusion matrix:\n", confusion_matrix(target_test, target_pred))
     print("------------------------------------\n")
+    
     # disp = plot_confusion_matrix(clf, feature_test, target_test, 
     #                              cmap=plt.cm.Blues, display_labels=label_names, normalize='true', values_format=".4f")
     # disp.ax_.set_title('Confusion matrix (Decision Tree)')
@@ -133,17 +134,23 @@ if sys.argv[1] == 'RF' or sys.argv[1] == 'ALL':
 
     target_pred = best.predict(feature_test)
     print("--------- By Random Forest ---------")
-    print("By micro average")
-    print("Recall: ", recall_score(target_test, target_pred, average='micro'))
-    print("Precision: ", precision_score(target_test, target_pred, average='micro'))
-    print("F1-Score: ", f1_score(target_test, target_pred, average='micro'))
-    print("")
-    print("By macro average")
-    print("Recall: ", recall_score(target_test, target_pred, average='macro'))
-    print("Precision: ", precision_score(target_test, target_pred, average='macro'))
-    print("F1-Score: ", f1_score(target_test, target_pred, average='macro'))
-    print("")
-    print("Confusion matrix:\n", confusion_matrix(target_test, target_pred))
+    print("Confusion matrix:")
+    print(row_format.format("", *class_list))
+    for team, row in zip(class_list, confusion_matrix(target_test,target_pred)):
+        print(row_format.format(team, *row))
+    print(classification_report(target_test, target_pred,target_names=class_list))
+    print("Misclassified sample: %d" % (target_test != target_pred).sum())
+    # print("By micro average")
+    # print("Recall: ", recall_score(target_test, target_pred, average='micro'))
+    # print("Precision: ", precision_score(target_test, target_pred, average='micro'))
+    # print("F1-Score: ", f1_score(target_test, target_pred, average='micro'))
+    # print("")
+    # print("By macro average")
+    # print("Recall: ", recall_score(target_test, target_pred, average='macro'))
+    # print("Precision: ", precision_score(target_test, target_pred, average='macro'))
+    # print("F1-Score: ", f1_score(target_test, target_pred, average='macro'))
+    # print("")
+    # print("Confusion matrix:\n", confusion_matrix(target_test, target_pred))
     print("------------------------------------\n")
     # disp = plot_confusion_matrix(clf, feature_test, target_test, 
     #                              cmap=plt.cm.Blues, display_labels=label_names, normalize='true', values_format=".4f")
@@ -160,17 +167,23 @@ if sys.argv[1] == 'SVM' or sys.argv[1] == 'ALL':
 
     target_pred = best.predict(feature_test)
     print("---------- By SVM ----------")
-    print("By micro average")
-    print("Recall: ", recall_score(target_test, target_pred, average='micro'))
-    print("Precision: ", precision_score(target_test, target_pred, average='micro'))
-    print("F1-Score: ", f1_score(target_test, target_pred, average='micro'))
-    print("")
-    print("By macro average")
-    print("Recall: ", recall_score(target_test, target_pred, average='macro'))
-    print("Precision: ", precision_score(target_test, target_pred, average='macro'))
-    print("F1-Score: ", f1_score(target_test, target_pred, average='macro'))
-    print("")
-    print("Confusion matrix:\n", confusion_matrix(target_test, target_pred))
+    print("Confusion matrix:")
+    print(row_format.format("", *class_list))
+    for team, row in zip(class_list, confusion_matrix(target_test,target_pred)):
+        print(row_format.format(team, *row))
+    print(classification_report(target_test, target_pred,target_names=class_list))
+    print("Misclassified sample: %d" % (target_test != target_pred).sum())
+    # print("By micro average")
+    # print("Recall: ", recall_score(target_test, target_pred, average='micro'))
+    # print("Precision: ", precision_score(target_test, target_pred, average='micro'))
+    # print("F1-Score: ", f1_score(target_test, target_pred, average='micro'))
+    # print("")
+    # print("By macro average")
+    # print("Recall: ", recall_score(target_test, target_pred, average='macro'))
+    # print("Precision: ", precision_score(target_test, target_pred, average='macro'))
+    # print("F1-Score: ", f1_score(target_test, target_pred, average='macro'))
+    # print("")
+    # print("Confusion matrix:\n", confusion_matrix(target_test, target_pred))
     print("------------------------------------\n")
     # disp = plot_confusion_matrix(clf, feature_test, target_test, 
     #                              cmap=plt.cm.Blues, display_labels=label_names, normalize='true', values_format=".4f")
@@ -187,17 +200,23 @@ if sys.argv[1] == 'NB' or sys.argv[1] == 'ALL':
 
     target_pred = best.predict(feature_test)
     print("---------- By Naive Bayes ----------")
-    print("By micro average")
-    print("Recall: ", recall_score(target_test, target_pred, average='micro'))
-    print("Precision: ", precision_score(target_test, target_pred, average='micro'))
-    print("F1-Score: ", f1_score(target_test, target_pred, average='micro'))
-    print("")
-    print("By macro average")
-    print("Recall: ", recall_score(target_test, target_pred, average='macro'))
-    print("Precision: ", precision_score(target_test, target_pred, average='macro'))
-    print("F1-Score: ", f1_score(target_test, target_pred, average='macro'))
-    print("")
-    print("Confusion matrix:\n", confusion_matrix(target_test, target_pred))
+    print("Confusion matrix:")
+    print(row_format.format("", *class_list))
+    for team, row in zip(class_list, confusion_matrix(target_test,target_pred)):
+        print(row_format.format(team, *row))
+    print(classification_report(target_test, target_pred,target_names=class_list))
+    print("Misclassified sample: %d" % (target_test != target_pred).sum())
+    # print("By micro average")
+    # print("Recall: ", recall_score(target_test, target_pred, average='micro'))
+    # print("Precision: ", precision_score(target_test, target_pred, average='micro'))
+    # print("F1-Score: ", f1_score(target_test, target_pred, average='micro'))
+    # print("")
+    # print("By macro average")
+    # print("Recall: ", recall_score(target_test, target_pred, average='macro'))
+    # print("Precision: ", precision_score(target_test, target_pred, average='macro'))
+    # print("F1-Score: ", f1_score(target_test, target_pred, average='macro'))
+    # print("")
+    # print("Confusion matrix:\n", confusion_matrix(target_test, target_pred))
     print("------------------------------------\n")
     # disp = plot_confusion_matrix(clf, feature_test, target_test, 
     #                              cmap=plt.cm.Blues, display_labels=label_names, normalize='true', values_format=".4f")

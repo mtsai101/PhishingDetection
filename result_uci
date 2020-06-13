@@ -1,0 +1,64 @@
+--------- By Decision Tree ---------
+By micro average
+Recall:  0.9312528267752148
+Precision:  0.9312528267752148
+F1-Score:  0.9312528267752148
+
+By macro average
+Recall:  0.929349130673957
+Precision:  0.9304577626620094
+F1-Score:  0.9298833308297031
+
+Confusion matrix:
+ [[ 875   81]
+ [  71 1184]]
+------------------------------------
+
+--------- By Random Forest ---------
+By micro average
+Recall:  0.9579375848032564
+Precision:  0.9579375848032564
+F1-Score:  0.9579375848032564
+
+By macro average
+Recall:  0.955471836503359
+Precision:  0.9588380305933444
+F1-Score:  0.957002830260683
+
+Confusion matrix:
+ [[ 896   60]
+ [  33 1222]]
+------------------------------------
+
+---------- By SVM ----------
+By micro average
+Recall:  0.9466304839439168
+Precision:  0.9466304839439168
+F1-Score:  0.9466304839439168
+
+By macro average
+Recall:  0.9436425844738201
+Precision:  0.9475940725940726
+F1-Score:  0.9454069504662103
+
+Confusion matrix:
+ [[ 881   75]
+ [  43 1212]]
+------------------------------------
+
+---------- By Naive Bayes ----------
+By micro average
+Recall:  0.8602442333785617
+Precision:  0.8602442333785617
+F1-Score:  0.8602442333785618
+
+By macro average
+Recall:  0.8585753221423927
+Precision:  0.8573066509418292
+F1-Score:  0.8578997122423362
+
+Confusion matrix:
+ [[ 809  147]
+ [ 162 1093]]
+------------------------------------
+
