@@ -50,7 +50,7 @@ if (sys.argv[1] != 'DT' and sys.argv[1] != 'RF' and sys.argv[1] != 'SVM' and sys
     print_help()
 
 pd.set_option('display.float_format', lambda x: '%.2f' % x)
-dataset = pd.read_csv('../dataset/UNB_Phishing.csv')
+dataset = pd.read_csv('../dataset/UNB_All.csv')
 dataset = dataset.fillna(-1)
 imp = SimpleImputer(missing_values=np.inf, strategy='constant',fill_value=1)
 imp.fit_transform(dataset)
